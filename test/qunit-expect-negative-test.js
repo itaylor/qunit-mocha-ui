@@ -11,7 +11,7 @@ test('expect fails async', function (done){
   setTimeout(function (){
     ok(true);
     done();
-  }, 100);
+  }, 1);
 });
 
 test('expect fails using arguments', 25, function (){
@@ -23,6 +23,6 @@ test('expect fails async using arguments', 1, function (done){
   setTimeout(function (){
     ok(true);
     done();
-  }, 100);
+  }, 1);
 });
 

@@ -10,33 +10,34 @@ if(module.parent){
 }else{
   Mocha = window.Mocha;
 }
+
 var Suite = Mocha.Suite
   , Test = Mocha.Test
   , assert = require("assert");
 
 /**
  * QUnit-style interface:
- * 
+ *
  *     suite('Array');
- *     
+ *
  *     test('#length', function(){
  *       var arr = [1,2,3];
  *       ok(arr.length == 3);
  *     });
- *     
+ *
  *     test('#indexOf()', function(){
  *       var arr = [1,2,3];
  *       ok(arr.indexOf(1) == 0);
  *       ok(arr.indexOf(2) == 1);
  *       ok(arr.indexOf(3) == 2);
  *     });
- *     
+ *
  *     suite('String');
- *     
+ *
  *     test('#length', function(){
  *       ok('foo'.length == 3);
  *     });
- * 
+ *
  */
 
 module.exports = function(suite){
@@ -44,6 +45,7 @@ module.exports = function(suite){
 
   var assertionCount;
   var expectedAssertions;
+  var deferrals;
   var currentDoneFn;
 
   suite.on('pre-require', function(context){
@@ -83,7 +85,7 @@ module.exports = function(suite){
     /**
      * Describe a "suite" with the given `title`.
      */
-  
+
     context.suite = function(title, opts){
       if (suites.length > 1) suites.shift();
       var suite = Suite.create(suites[0], title);
@@ -96,8 +98,8 @@ module.exports = function(suite){
       }
     };
 
-    /** 
-    * Call this after each assertion to increment the assertion count 
+    /**
+    * Call this after each assertion to increment the assertion count
     * (for custom assertion types)
     */
     context.afterAssertion = function (){
@@ -121,8 +123,8 @@ module.exports = function(suite){
     // Deprecated since QUnit v1.9.0, but still used, e.g. by Backbone.
     context.raises = context.throws
 
-    /** 
-    * Checks to see if the assertion counts indicate a failure.  
+    /**
+    * Checks to see if the assertion counts indicate a failure.
     * Returns an Error object if it did, null otherwise;
     */
     var checkAssertionCount = function (){
@@ -132,19 +134,25 @@ module.exports = function(suite){
       return null;
     };
 
-    /* We're going to say that starting a stopped QUnit test is equivalent to calling mocha's done() */
     context.start = function (){
-      if(currentDoneFn){
-        currentDoneFn();
+      deferrals--;
+      if (deferrals === 0) {
+        process.nextTick(function() {
+          if (deferrals === 0 && currentDoneFn) {
+            currentDoneFn();
+          }
+        });
+      } else if (deferrals < 0) {
+        throw new Error("cannot call start() when not stopped");
       }
     };
 
     context.stop = function (){
-      //do nothing, this is here for compatibility only.
+      deferrals++;
     };
 
-    /** 
-    * A naive way of determining if the test function uses the "start" or 
+    /**
+    * A naive way of determining if the test function uses the "start" or
     * "stop" functions of QUnit.
     */
 
@@ -152,7 +160,7 @@ module.exports = function(suite){
       var fnText = fn.toString();
       var startRegex = /[\s;](start\s?\([^)]*?\))/;
       var stopRegex = /[\s;](stop\s?\([^)]*?\))/;
-      var hasStart = startRegex.test(fnText); 
+      var hasStart = startRegex.test(fnText);
       var hasStop = stopRegex.test(fnText);
       return hasStart || hasStop;
     };
@@ -170,6 +178,7 @@ module.exports = function(suite){
       var newFn;
       if(fn.length || fnHasStartStop(fn)){
         newFn = function (done){
+          deferrals = 0;
           expectedAssertions = expect;
           assertionCount = 0;
           var newDone = function (err){
@@ -180,6 +189,7 @@ module.exports = function(suite){
         }
       }else{
         newFn = function (){
+          deferrals = 0;
           expectedAssertions = expect;
           assertionCount = 0;
           fn.bind(this)();
@@ -197,7 +207,20 @@ module.exports = function(suite){
       suites[0].addTest(new Test(title, newFn));
     };
 
-    context.asyncTest = context.test;
+    context.asyncTest = function(title, expect, fn) {
+      if(typeof expect == "function"){
+        fn = expect;
+        expect = 0;
+      }
+      var newFn = function(done) {
+        context.stop();
+        fn.call(this, done);
+      };
+      newFn.toString = function() {
+        return fn.toString();
+      };
+      context.test(title, expect, newFn);
+    };
 
   });
 };
