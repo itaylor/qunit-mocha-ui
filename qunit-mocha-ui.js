@@ -47,6 +47,7 @@ module.exports = function(suite){
   var expectedAssertions;
   var deferrals;
   var currentDoneFn;
+  var checkingDeferrals;
 
   suite.on('pre-require', function(context){
 
@@ -136,8 +137,10 @@ module.exports = function(suite){
 
     context.start = function (){
       deferrals--;
-      if (deferrals === 0) {
+      if (deferrals === 0 && !checkingDeferrals) {
+        checkingDeferrals = true;
         process.nextTick(function() {
+          checkingDeferrals = false;
           if (deferrals === 0 && currentDoneFn) {
             currentDoneFn();
           }
@@ -151,19 +154,6 @@ module.exports = function(suite){
       deferrals++;
     };
 
-    /**
-    * A naive way of determining if the test function uses the "start" or
-    * "stop" functions of QUnit.
-    */
-
-    var fnHasStartStop = function (fn){
-      var fnText = fn.toString();
-      var startRegex = /[\s;](start\s?\([^)]*?\))/;
-      var stopRegex = /[\s;](stop\s?\([^)]*?\))/;
-      var hasStart = startRegex.test(fnText);
-      var hasStop = stopRegex.test(fnText);
-      return hasStart || hasStop;
-    };
 
     /**
      * Describe a specification or test-case
@@ -175,35 +165,23 @@ module.exports = function(suite){
         fn = expect;
         expect = 0;
       }
-      var newFn;
-      if(fn.length || fnHasStartStop(fn)){
-        newFn = function (done){
-          deferrals = 0;
-          expectedAssertions = expect;
-          assertionCount = 0;
-          var newDone = function (err){
-            done(err || checkAssertionCount());
-          };
-          currentDoneFn = newDone;
-          fn.bind(this)(newDone);
-        }
-      }else{
-        newFn = function (){
-          deferrals = 0;
-          expectedAssertions = expect;
-          assertionCount = 0;
-          fn.bind(this)();
-          var countError= checkAssertionCount();
-          if(countError){
-            throw countError;
-          }
-        }
+      var newFn = function (done){
+        deferrals = 0;
+        checkingDeferrals = false;
+        expectedAssertions = expect;
+        assertionCount = 0;
+        currentDoneFn = function (){
+          done(checkAssertionCount());
+        };
+        context.stop();
+        fn.bind(this)();
+        context.start();
       }
       //this little business makes it so that the Mocha HTML reporter
       //shows the correct function bodies.
       newFn.toString = function (){
         return fn.toString();
-      }
+      };
       suites[0].addTest(new Test(title, newFn));
     };
 
@@ -216,6 +194,8 @@ module.exports = function(suite){
         context.stop();
         fn.call(this, done);
       };
+      //this little business makes it so that the Mocha HTML reporter
+      //shows the correct function bodies.
       newFn.toString = function() {
         return fn.toString();
       };

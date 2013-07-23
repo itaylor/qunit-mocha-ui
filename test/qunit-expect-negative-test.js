@@ -5,24 +5,26 @@ test('expect fails', function (){
   ok(true);
 });
 
-test('expect fails async', function (done){
+test('expect fails async', function (){
   expect(1);
   ok(true);
   setTimeout(function (){
     ok(true);
-    done();
+    start();
   }, 1);
+  stop();
 });
 
 test('expect fails using arguments', 25, function (){
   ok(true);
 });
 
-test('expect fails async using arguments', 1, function (done){
+test('expect fails async using arguments', 1, function (){
   ok(true);
   setTimeout(function (){
     ok(true);
-    done();
+    start();
   }, 1);
+  stop();
 });
 

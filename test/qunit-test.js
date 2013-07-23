@@ -67,13 +67,14 @@ test('expect succeeds', function (){
   ok(true);
 });
 
-test('expect succeeds async', function (done){
+test('expect succeeds async', function (){
   expect(2);
   ok(true);
   setTimeout(function (){
     ok(true);
-    done();
+    start();
   }, 20);
+  stop();
 });
 
 test('expect succeeds using arguments', 3, function (){
@@ -82,12 +83,13 @@ test('expect succeeds using arguments', 3, function (){
   ok(true);
 });
 
-test('expect succeeds async using arguments', 2, function (done){
+test('expect succeeds async using arguments', 2, function (){
   ok(true);
   setTimeout(function (){
     ok(true);
-    done();
+    start();
   }, 20);
+  stop();
 });
 
 suite("asyncTest method support");
@@ -99,21 +101,13 @@ asyncTest( "using asyncTest to start after a delay", function() {
   }, 1);
 });
 
-asyncTest( "using asyncTest with done parameter", function (done){
-  expect(1);
-  setTimeout(function() {
-    ok( true, "Passed and ready to resume!" );
-    done();
-  }, 1);
-});
-
 test("This non asyncTest calls stop() then start() later.", function (){
   stop();
   expect(1);
   setTimeout(function (){
     ok(true);
     start();
-  }, 1)
+  }, 1);
 });
 
 test('using stop() then start() multiple times', function (){
