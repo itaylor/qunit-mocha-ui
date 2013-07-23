@@ -210,17 +210,24 @@ module.exports = function(suite){
       deferrals++;
     };
 
+    function normalizeTestArgs(fn) {
+      return function(title, expect, test) {
+        if (typeof expect == "function") {
+          test = expect;
+          expect = 0;
+        }
+
+        return fn.call(this, title, expect, test);
+      };
+    }
+
 
     /**
      * Describe a specification or test-case
      * with the given `title`, an optional number of assertions to expect,
      * callback `fn` acting as a thunk.
      */
-    context.test = function(title, expect, fn){
-      if(typeof expect == "function"){
-        fn = expect;
-        expect = 0;
-      }
+    context.test = normalizeTestArgs(function(title, expect, fn){
       var newFn = function (done){
         deferrals = 0;
         checkingDeferrals = false;
@@ -239,13 +246,9 @@ module.exports = function(suite){
         return fn.toString();
       };
       suites[0].addTest(new Test(title, newFn));
-    };
+    });
 
-    context.asyncTest = function(title, expect, fn) {
-      if(typeof expect == "function"){
-        fn = expect;
-        expect = 0;
-      }
+    context.asyncTest = normalizeTestArgs(function(title, expect, fn) {
       var newFn = function(done) {
         context.stop();
         fn.call(this, done);
@@ -256,7 +259,7 @@ module.exports = function(suite){
         return fn.toString();
       };
       context.test(title, expect, newFn);
-    };
+    });
 
   });
 };
