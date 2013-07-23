@@ -165,44 +165,39 @@ module.exports = function(suite){
       };
     }
 
+    function wrapTestFunction(test, wrapper) {
+      var result = function(done) {
+        return wrapper.call(this, test, done);
+      };
+      result.toString = test.toString.bind(test);
+      return result;
+    }
 
     /**
      * Describe a specification or test-case
      * with the given `title`, an optional number of assertions to expect,
-     * callback `fn` acting as a thunk.
+     * callback `test` acting as a thunk.
      */
-    context.test = normalizeTestArgs(function(title, expect, fn){
-      var newFn = function (done){
+    context.test = normalizeTestArgs(function(title, expect, test) {
+      suites[0].addTest(new Test(title, wrapTestFunction(test, function(test, done) {
         deferrals = 0;
         checkingDeferrals = false;
         expectedAssertions = expect;
         assertionCount = 0;
-        currentDoneFn = function (){
+        currentDoneFn = function() {
           done(checkAssertionCount());
         };
         context.stop();
-        fn.bind(this)();
+        test.call(this);
         context.start();
-      }
-      //this little business makes it so that the Mocha HTML reporter
-      //shows the correct function bodies.
-      newFn.toString = function (){
-        return fn.toString();
-      };
-      suites[0].addTest(new Test(title, newFn));
+      })));
     });
 
-    context.asyncTest = normalizeTestArgs(function(title, expect, fn) {
-      var newFn = function(done) {
+    context.asyncTest = normalizeTestArgs(function(title, expect, test) {
+      context.test(title, expect, wrapTestFunction(test, function(test, done) {
         context.stop();
-        fn.call(this, done);
-      };
-      //this little business makes it so that the Mocha HTML reporter
-      //shows the correct function bodies.
-      newFn.toString = function() {
-        return fn.toString();
-      };
-      context.test(title, expect, newFn);
+        test.call(this);
+      }));
     });
 
   });
