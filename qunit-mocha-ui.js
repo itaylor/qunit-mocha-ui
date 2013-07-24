@@ -10,34 +10,33 @@ if(module.parent){
 }else{
   Mocha = window.Mocha;
 }
-
 var Suite = Mocha.Suite
   , Test = Mocha.Test
   , assert = require("assert");
 
 /**
  * QUnit-style interface:
- *
+ * 
  *     suite('Array');
- *
+ *     
  *     test('#length', function(){
  *       var arr = [1,2,3];
  *       ok(arr.length == 3);
  *     });
- *
+ *     
  *     test('#indexOf()', function(){
  *       var arr = [1,2,3];
  *       ok(arr.indexOf(1) == 0);
  *       ok(arr.indexOf(2) == 1);
  *       ok(arr.indexOf(3) == 2);
  *     });
- *
+ *     
  *     suite('String');
- *
+ *     
  *     test('#length', function(){
  *       ok('foo'.length == 3);
  *     });
- *
+ * 
  */
 
 module.exports = function(suite){
@@ -86,7 +85,7 @@ module.exports = function(suite){
     /**
      * Describe a "suite" with the given `title`.
      */
-
+  
     context.suite = function(title, opts){
       if (suites.length > 1) suites.shift();
       var suite = Suite.create(suites[0], title);
@@ -99,8 +98,8 @@ module.exports = function(suite){
       }
     };
 
-    /**
-    * Call this after each assertion to increment the assertion count
+    /** 
+    * Call this after each assertion to increment the assertion count 
     * (for custom assertion types)
     */
     context.afterAssertion = function (){
@@ -124,8 +123,8 @@ module.exports = function(suite){
     // Deprecated since QUnit v1.9.0, but still used, e.g. by Backbone.
     context.raises = context.throws
 
-    /**
-    * Checks to see if the assertion counts indicate a failure.
+    /** 
+    * Checks to see if the assertion counts indicate a failure.  
     * Returns an Error object if it did, null otherwise;
     */
     var checkAssertionCount = function (){
