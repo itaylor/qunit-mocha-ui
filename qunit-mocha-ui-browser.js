@@ -228,12 +228,7 @@ module.exports = function(suite){
       return result;
     }
 
-    /**
-     * Describe a specification or test-case
-     * with the given `title`, an optional number of assertions to expect,
-     * callback `test` acting as a thunk.
-     */
-    context.test = normalizeTestArgs(function(title, expect, test) {
+    function addTest(title, expect, test) {
       suites[0].addTest(new Test(title, wrapTestFunction(test, function(test, done) {
         deferrals = 0;
         checkingDeferrals = false;
@@ -241,17 +236,32 @@ module.exports = function(suite){
         assertionCount = 0;
         currentDoneFn = function() {
           done(checkAssertionCount());
+          currentDoneFn = null;
         };
         context.stop();
-        test.call(this);
+        test.call(this, currentDoneFn);
         context.start();
       })));
+    }
+
+    /**
+     * Describe a specification or test-case
+     * with the given `title`, an optional number of assertions to expect,
+     * callback `test` acting as a thunk.
+     */
+    context.test = normalizeTestArgs(function(title, expect, test) {
+      if (test.length) {
+        // it takes an argument, assumed to be the done function, so it's really an async test
+        context.asyncTest(title, expect, test);
+      } else {
+        addTest(title, expect, test);
+      }
     });
 
     context.asyncTest = normalizeTestArgs(function(title, expect, test) {
-      context.test(title, expect, wrapTestFunction(test, function(test, done) {
+      addTest(title, expect, wrapTestFunction(test, function(test, done) {
         context.stop();
-        test.call(this);
+        test.call(this, done);
       }));
     });
 
