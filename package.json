@@ -1,7 +1,7 @@
 {
   "name": "qunit-mocha-ui",
   "description": "A QUnit Interface for Mocha that supports all QUnit's assertion types.",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "author": "Ian Taylor <ian.b.taylor@gmail.com>",
   "repository": {
     "type": "git",
@@ -10,11 +10,11 @@
   "devDependencies": {
     "grunt": "~0.4.1",
     "grunt-mocha-test": ">=0.6.1",
-    "grunt-browserify": "~1.2.0",
-    "mocha": "~1.12.0"
+    "grunt-browserify": ">=1.2.0",
+    "mocha": ">=1.12.0"
   },
   "peerDependencies": {
-    "mocha": "~1.12.0"
+    "mocha": ">=1.12.0"
   },
   "main": "qunit-mocha-ui.js",
   "scripts": {
